@@ -10,7 +10,7 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.sunbagchan.wellness",
       "infoPlist": {
-        "CFBundleDisplayName": "웰니스 비서"
+        "CFBundleDisplayName": "Wellness"
       }
     },
     "android": {
@@ -24,6 +24,9 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "locales": {
+      "ko": "./locales/ko.json"
     }
   }
 }
