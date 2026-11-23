@@ -1,0 +1,62 @@
+# 클라우드 Mac에서 아이폰 앱(.ipa)을 서명 없이 빌드합니다.
+# 결과물은 Actions 실행 페이지의 Artifacts에서 받아 AltStore로 설치하세요(AltStore가 내 Apple ID로 서명).
+name: Build iOS IPA for AltStore
+
+on:
+  workflow_dispatch: # Actions 탭에서 "Run workflow" 버튼으로 실행
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: 가장 최신 Xcode 선택
+        run: |
+          XCODE=$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)
+          echo "Using $XCODE"
+          sudo xcode-select -s "$XCODE"
+
+      - name: 패키지 설치
+        run: npm ci
+
+      - name: 시간표 규칙 테스트
+        run: npm test
+
+      - name: iOS 네이티브 프로젝트 생성
+        run: npx expo prebuild --platform ios --clean
+        env:
+          CI: 1
+
+      - name: 빌드 (서명 없이)
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -workspace ios/WellnessApp.xcworkspace \
+            -scheme WellnessApp \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            build | tail -200
+
+      - name: IPA로 묶기
+        run: |
+          mkdir -p Payload
+          cp -R build/Build/Products/Release-iphoneos/WellnessApp.app Payload/
+          zip -qry WellnessApp.ipa Payload
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: WellnessApp-ipa
+          path: WellnessApp.ipa
+          retention-days: 14

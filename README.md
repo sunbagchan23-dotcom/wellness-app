@@ -1,0 +1,45 @@
+# 웰니스 비서 (1단계: 본인 사용용)
+
+할 일을 던져 두면 고정 일정, 수면, 운동을 피해 주간 시간표에 알아서 넣어 주는 아이폰 앱입니다.
+
+## 지금 들어 있는 것
+- 처음 설정: 요일별 고정 일정 → 수면(취침 시각 + 수면 시간 → 기상 시각 계산) → 운동(종류, 시간, 요일)
+- 규칙 기반 주간 시간표 (LLM 없음, 같은 입력이면 같은 결과)
+- 충돌 알림: 고정 일정끼리 겹침, 수면과 겹침, 운동·할 일 넣을 자리 없음
+- 오늘 화면: 지금 할 일, 다음 일정, 완료 체크
+- 할 일 던지기: 이름 + 걸리는 시간 + (선택) 요일
+- 데이터는 폰 안에만 저장
+
+## 아직 없는 것 (다음 후보)
+- 알림, 아이폰 캘린더에 써 넣기
+- 시간표가 어긋났을 때 재조정
+- 잠금화면 위젯 / 라이브 액티비티 (Apple 개발자 계정 필요)
+- 지난주 할 일 정리 (지금은 주가 바뀌어도 할 일이 남아 있음)
+
+## 아이폰에 설치하기 (GitHub + AltStore)
+1. 이 폴더를 GitHub 저장소에 올리면 `.github/workflows/build-ios.yml`이 클라우드 Mac에서 앱을 빌드합니다.
+2. GitHub 저장소 → Actions 탭 → 최근 실행 → 아래 Artifacts에서 `WellnessApp-ipa`를 받아 압축을 풉니다.
+3. PC의 AltServer가 켜진 상태에서, 아이폰 AltStore로 `WellnessApp.ipa`를 설치합니다.
+4. 무료 Apple ID는 7일마다 AltStore에서 새로고침해야 합니다.
+
+## 빠르게 화면만 확인하기 (Expo Go, 선택)
+1. PC에 Node.js LTS 설치: https://nodejs.org
+2. 아이폰에 App Store에서 **Expo Go** 설치
+3. 이 폴더에서 터미널(PowerShell)을 열고:
+   ```
+   npm install
+   npx expo start --tunnel
+   ```
+4. 화면에 나온 QR 코드를 아이폰 기본 카메라로 찍으면 Expo Go에서 앱이 열립니다.
+   - PC와 폰이 같은 와이파이면 `--tunnel` 없이 `npx expo start`도 됩니다.
+   - Expo Go 버전과 이 프로젝트의 Expo SDK(58)가 맞지 않는다는 오류가 나오면 알려 주세요.
+
+PC 브라우저로 미리 보기: `npm run web`
+
+## 파일 안내
+- `App.tsx`: 시작점. 설정이 없으면 처음 설정 화면, 있으면 오늘 화면
+- `src/scheduler.ts`: 시간표 만드는 규칙 (가장 중요)
+- `src/screens/Onboarding.tsx`: 처음 설정 화면
+- `src/screens/Today.tsx`: 오늘 화면
+- `src/theme.ts`: 색상. 디자인을 바꾸려면 여기부터
+- `tests/scheduler.test.ts`: 규칙 테스트 (`npm test`)
