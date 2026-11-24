@@ -1,11 +1,11 @@
 // 고정 일정 입력: 주간 격자에 손가락으로 칠하기
-// - 위에서 이름(붓)을 고르고, 격자에서 시작 칸 → 끝 칸으로 드래그하면 그 사각형이 칠해집니다.
-//   예: 월요일 09:00 칸에서 금요일 18:00 칸까지 대각선으로 끌면 "월~금 9~6"이 한 번에.
-// - 이미 같은 이름으로 칠해진 칸에서 시작하면 지우기가 됩니다.
+// - 위에서 이름(붓)을 고르고, 격자에서 위아래로 끌면 처음 닿은 요일 칸만 칠해집니다.
+// - 칠한 덩어리를 한 번 누르면 그 덩어리가 통째로 지워집니다.
 import { useMemo, useRef, useState } from 'react';
 import { GestureResponderEvent, LayoutChangeEvent, Pressable, StyleSheet, Text, View } from 'react-native';
 import {
   Brush,
+  clearRun,
   eventsToGrid,
   Grid,
   gridToEvents,
@@ -47,7 +47,7 @@ export default function FixedGrid({
   const [newName, setNewName] = useState('');
 
   // 드래그 중 상태 (렌더에 안 쓰는 값은 ref로)
-  const drag = useRef<{ from: Cell; base: Grid; value: string | null } | null>(null);
+  const drag = useRef<{ from: Cell; base: Grid; moved: boolean } | null>(null);
   const [preview, setPreview] = useState<Grid | null>(null);
 
   const colW = width > 0 ? (width - AXIS_W) / 7 : 0;
@@ -134,7 +134,7 @@ export default function FixedGrid({
       )}
       <Text style={st.help}>
         {active
-          ? '시작 칸에서 끝 칸까지 대각선으로 끌면 사각형으로 칠해져요. 칠한 칸에서 시작하면 지워져요.'
+          ? '요일 칸을 위아래로 끌어 칠해요. 칠한 덩어리를 한 번 누르면 지워져요.'
           : '먼저 위에서 이름을 고르거나 만들어 주세요.'}
       </Text>
 
@@ -148,17 +148,25 @@ export default function FixedGrid({
         onResponderGrant={(e) => {
           onTouching?.(true);
           const from = cellAt(e);
-          const value = grid[from.day][from.slot] === active ? null : active;
-          drag.current = { from, base: grid, value };
-          setPreview(paintRect(grid, from, from, value));
+          drag.current = { from, base: grid, moved: false };
+          // 빈 칸에서 시작하면 바로 한 칸 칠해 보여 줌. 칠한 칸이면 손을 떼기 전까지 기다림(누르기=삭제)
+          if (!grid[from.day][from.slot]) setPreview(paintRect(grid, from, from, active));
         }}
         onResponderMove={(e) => {
           const d = drag.current;
           if (!d) return;
-          setPreview(paintRect(d.base, d.from, cellAt(e), d.value));
+          // 처음 닿은 요일에서만 위아래로
+          const to = { day: d.from.day, slot: cellAt(e).slot };
+          if (to.slot !== d.from.slot) d.moved = true;
+          if (d.moved) setPreview(paintRect(d.base, d.from, to, active));
         }}
         onResponderRelease={() => {
-          if (preview) commit(preview);
+          const d = drag.current;
+          if (d && !d.moved && d.base[d.from.day][d.from.slot]) {
+            commit(clearRun(d.base, d.from.day, d.from.slot)); // 칠한 덩어리 누르기 → 삭제
+          } else if (preview) {
+            commit(preview);
+          }
           drag.current = null;
           setPreview(null);
           onTouching?.(false);

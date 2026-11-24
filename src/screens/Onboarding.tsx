@@ -1,21 +1,22 @@
-// 처음 설정: ① 고정 일정 → ② 수면(사이클로 기상 시각 고르기) → ③ 운동(인터뷰형, 한 질문씩) → ④ 확인
+// 처음 설정: ① 고정 일정(격자 칠하기) → ② 수면(사이클로 기상 시각 고르기) → ③ 운동(한 질문씩, 누르면 바로 다음) → 시간표
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { buildWeek, exerciseDaysFor } from '../scheduler';
+import { exerciseDaysFor } from '../scheduler';
 import { sleepOptions } from '../sleep';
 import { colors } from '../theme';
-import { DAY_LABELS, FixedEvent, Settings } from '../types';
+import { FixedEvent, Settings } from '../types';
 import { formatTime, parseTime } from '../time';
-import { Button, Card, ChoiceBox, Sub, TimeInput, Title } from '../ui';
+import { Button, ChoiceBox, Sub, TimeInput, Title } from '../ui';
 import FixedGrid from './FixedGrid';
 
+// 운동 질문: 러닝과 헬스를 기본으로, 각각 한 번에 얼마나 하는지만 묻습니다.
+// 요일은 앱이 정합니다(지금은 월~금). 다른 운동은 나중에 대화형으로 바꿀 예정.
+const RUN_MINUTES = [20, 30, 45, 60];
+const GYM_MINUTES = [30, 45, 60, 90];
+const DEFAULT_PER_WEEK = 5;
 
-// 운동 인터뷰 질문들
-const EXERCISE_MINUTES = [30, 45, 60, 90];
-const EXERCISE_PER_WEEK = [3, 4, 5, 6];
-
-type Step = 'fixed' | 'sleep' | 'exDo' | 'exKind' | 'exMin' | 'exFreq' | 'review';
-const STEPS: Step[] = ['fixed', 'sleep', 'exDo', 'exKind', 'exMin', 'exFreq', 'review'];
+type Step = 'fixed' | 'sleep' | 'exDo' | 'runMin' | 'gymMin';
+const STEPS: Step[] = ['fixed', 'sleep', 'exDo', 'runMin', 'gymMin'];
 
 export default function Onboarding({
   initial,
@@ -32,10 +33,7 @@ export default function Onboarding({
   const [cycles, setCycles] = useState<number | null>(initial?.sleep.cycles ?? null);
 
   // 운동
-  const [exOn, setExOn] = useState(initial?.exercise.enabled ?? true);
-  const [exTypes, setExTypes] = useState<string[]>(initial?.exercise.types ?? ['러닝', '헬스']);
-  const [exMin, setExMin] = useState(initial?.exercise.minutes ?? 60);
-  const [exPerWeek, setExPerWeek] = useState(initial?.exercise.perWeek ?? 5);
+  const [runMin, setRunMin] = useState(30);
 
   const [scrollOn, setScrollOn] = useState(true);
 
@@ -43,27 +41,34 @@ export default function Onboarding({
   const options = bedtime === null ? [] : sleepOptions(bedtime);
   const chosen = options.find((o) => o.cycles === cycles);
 
-  const settings = (): Settings => ({
-    fixed,
-    sleep: {
-      bedtime: bedtime ?? 23 * 60,
-      hours: chosen?.inBedHours ?? 7.75,
-      cycles: chosen?.cycles ?? 5,
-    },
-    exercise: {
-      enabled: exOn,
-      types: exTypes,
-      minutes: exMin,
-      perWeek: exPerWeek,
-      days: exerciseDaysFor(exPerWeek),
-    },
-  });
+  /** 마지막 답을 받은 순간 바로 시간표를 만듦 (확인 화면 없음) */
+  function finish(exercise: { run: number; gym: number } | null) {
+    const items = exercise
+      ? [
+          { type: '러닝', minutes: exercise.run },
+          { type: '헬스', minutes: exercise.gym },
+        ]
+      : [];
+    onDone({
+      fixed,
+      sleep: {
+        bedtime: bedtime ?? 23 * 60,
+        hours: chosen?.inBedHours ?? 7.75,
+        cycles: chosen?.cycles ?? 5,
+      },
+      exercise: {
+        enabled: !!exercise,
+        types: items.map((i) => i.type),
+        minutes: items.reduce((sum, i) => sum + i.minutes, 0),
+        items,
+        perWeek: DEFAULT_PER_WEEK,
+        days: exerciseDaysFor(DEFAULT_PER_WEEK),
+      },
+    });
+  }
 
   const go = (s: Step) => setStep(s);
-  const back = () => {
-    if (step === 'review' && !exOn) return go('exDo');
-    go(STEPS[Math.max(0, STEPS.indexOf(step) - 1)]);
-  };
+  const back = () => go(STEPS[Math.max(0, STEPS.indexOf(step) - 1)]);
 
   return (
     <ScrollView contentContainerStyle={st.wrap} keyboardShouldPersistTaps="handled" scrollEnabled={scrollOn}>
@@ -135,129 +140,37 @@ export default function Onboarding({
       {step === 'exDo' && (
         <>
           <Title>운동을 하고 있나요?</Title>
-          <ChoiceBox
-            label="네, 하고 있어요"
-            on={exOn}
-            onPress={() => {
-              setExOn(true);
-              go('exKind');
-            }}
-          />
-          <ChoiceBox
-            label="아직은 안 해요"
-            hint="시간표에 운동을 넣지 않아요. 나중에 바꿀 수 있어요"
-            on={!exOn}
-            onPress={() => {
-              setExOn(false);
-              go('review');
-            }}
-          />
+          <ChoiceBox label="네, 하고 있어요" onPress={() => go('runMin')} />
+          <ChoiceBox label="아직은 안 해요" hint="시간표에 운동을 넣지 않아요. 나중에 바꿀 수 있어요" onPress={() => finish(null)} />
         </>
       )}
 
-      {step === 'exKind' && (
+      {step === 'runMin' && (
         <>
-          <Title>처음엔 러닝 + 헬스부터 시작해 보세요</Title>
-          <Sub>
-            운동을 잘 몰라도 가장 시작하기 쉬운 조합이에요. 장비나 강습 없이 바로 할 수 있고, 유산소(러닝)와 근력(헬스)을 같이 챙길 수 있어요.
-          </Sub>
-          <ChoiceBox
-            label="좋아요, 러닝 + 헬스로 할게요"
-            hint="아침에 같이 넣어 드려요"
-            on
-            onPress={() => {
-              setExTypes(['러닝', '헬스']);
-              go('exMin');
-            }}
-          />
-          <Sub>다른 운동이나 취미 운동은 시간표가 나온 뒤 대화로 바꿀 수 있게 만들 예정이에요.</Sub>
-        </>
-      )}
-
-      {step === 'exMin' && (
-        <>
-          <Title>한 번 하면 얼마나 하나요?</Title>
-          {EXERCISE_MINUTES.map((m) => (
+          <Title>러닝은 한 번에 얼마나 하나요?</Title>
+          {RUN_MINUTES.map((m) => (
             <ChoiceBox
               key={m}
               label={`${m}분`}
-              on={exMin === m}
               onPress={() => {
-                setExMin(m);
-                go('exFreq');
+                setRunMin(m);
+                go('gymMin');
               }}
             />
           ))}
         </>
       )}
 
-      {step === 'exFreq' && (
+      {step === 'gymMin' && (
         <>
-          <Title>일주일에 몇 번 하고 싶나요?</Title>
-          <Sub>요일과 시간대는 다른 일정을 보고 앱이 정해요. 기상 30분 뒤부터 오전 빈 시간에 먼저 넣습니다.</Sub>
-          {EXERCISE_PER_WEEK.map((n) => (
-            <ChoiceBox
-              key={n}
-              label={`주 ${n}회`}
-              hint={exerciseDaysFor(n).map((d) => DAY_LABELS[d]).join(' ')}
-              on={exPerWeek === n}
-              onPress={() => {
-                setExPerWeek(n);
-                go('review');
-              }}
-            />
+          <Title>헬스는 한 번에 얼마나 하나요?</Title>
+          {GYM_MINUTES.map((m) => (
+            <ChoiceBox key={m} label={`${m}분`} onPress={() => finish({ run: runMin, gym: m })} />
           ))}
+          <Sub>러닝 다음에 헬스를 이어서, 기상 30분 뒤부터 오전 빈 시간에 넣어 드려요.</Sub>
         </>
       )}
-
-      {step === 'review' && <Review settings={settings()} onDone={() => onDone(settings())} />}
     </ScrollView>
-  );
-}
-
-function Review({ settings, onDone }: { settings: Settings; onDone: () => void }) {
-  const week = buildWeek(settings, [], 0);
-  const { sleep, exercise } = settings;
-  return (
-    <View>
-      <Title>이렇게 시간표를 만들게요</Title>
-      {settings.fixed.length > 0 && (
-        <Card>
-          {settings.fixed.map((f) => (
-            <Text key={f.id} style={st.itemSub}>
-              {f.title} · {f.days.map((d) => DAY_LABELS[d]).join(' ')} · {formatTime(f.start)}~{formatTime(f.end)}
-            </Text>
-          ))}
-        </Card>
-      )}
-      <Card>
-        <Text style={st.itemTitle}>
-          수면 {formatTime(sleep.bedtime)} → {formatTime(sleep.bedtime + Math.round(sleep.hours * 60))}
-        </Text>
-        <Text style={st.itemSub}>{sleep.cycles}사이클</Text>
-      </Card>
-      {exercise.enabled && (
-        <Card>
-          <Text style={st.itemTitle}>
-            {exercise.types.join(' + ')} {exercise.minutes}분
-          </Text>
-          <Text style={st.itemSub}>
-            주 {exercise.perWeek}회 · {exercise.days.map((d) => DAY_LABELS[d]).join(' ')}
-          </Text>
-        </Card>
-      )}
-      {week.conflicts.length > 0 && (
-        <>
-          <Sub>아래 충돌이 있어요. 이전으로 돌아가 고치거나, 이대로 만들고 나중에 고칠 수 있습니다.</Sub>
-          {week.conflicts.map((c, i) => (
-            <Card key={i}>
-              <Text style={{ color: colors.warn }}>{c.message}</Text>
-            </Card>
-          ))}
-        </>
-      )}
-      <Button label="시간표 만들기" onPress={onDone} />
-    </View>
   );
 }
 

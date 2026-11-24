@@ -91,3 +91,15 @@ export function paintRect(
   for (let d = d0; d <= d1; d++) for (let s = s0; s <= s1; s++) next[d][s] = value;
   return next;
 }
+
+/** 칠한 덩어리 하나(같은 요일에서 이어진 같은 이름 칸들)를 통째로 지움 */
+export function clearRun(grid: Grid, day: number, slot: number): Grid {
+  const id = grid[day][slot];
+  if (!id) return grid;
+  const next = grid.map((col) => [...col]);
+  let s = slot;
+  while (s >= 0 && next[day][s] === id) next[day][s--] = null;
+  s = slot + 1;
+  while (s < SLOT_COUNT && next[day][s] === id) next[day][s++] = null;
+  return next;
+}

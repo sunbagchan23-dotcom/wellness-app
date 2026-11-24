@@ -98,12 +98,26 @@ export function buildWeek(settings: Settings, tasks: Task[], today: DayIndex): W
     // 운동
     const ex = settings.exercise;
     if (ex.enabled && ex.days.includes(d)) {
-      const title = ex.types.length ? ex.types.join(' + ') : '운동';
+      // 운동별 시간이 있으면 연달아 배치 (예: 러닝 30분 → 헬스 60분)
+      const items = ex.items?.length
+        ? ex.items
+        : [{ type: ex.types.length ? ex.types.join(' + ') : '운동', minutes: ex.minutes }];
+      const total = items.reduce((sum, it) => sum + it.minutes, 0);
       const slot =
-        findSlot(day, ex.minutes, awake.start, Math.min(MORNING_END, awake.end)) ??
-        findSlot(day, ex.minutes, awake.start, awake.end);
+        findSlot(day, total, awake.start, Math.min(MORNING_END, awake.end)) ??
+        findSlot(day, total, awake.start, awake.end);
       if (slot) {
-        day.push({ id: 'exercise', title, kind: 'exercise', ...slot });
+        let cursor = slot.start;
+        items.forEach((it, i) => {
+          day.push({
+            id: items.length > 1 ? `exercise-${i}` : 'exercise',
+            title: it.type,
+            kind: 'exercise',
+            start: cursor,
+            end: cursor + it.minutes,
+          });
+          cursor += it.minutes;
+        });
         if (slot.start >= MORNING_END) {
           conflicts.push({
             day: d,
@@ -111,7 +125,7 @@ export function buildWeek(settings: Settings, tasks: Task[], today: DayIndex): W
           });
         }
       } else {
-        conflicts.push({ day: d, message: `${DAY_LABELS[d]}요일에는 운동 ${ex.minutes}분을 넣을 자리가 없습니다.` });
+        conflicts.push({ day: d, message: `${DAY_LABELS[d]}요일에는 운동 ${total}분을 넣을 자리가 없습니다.` });
       }
     }
   }

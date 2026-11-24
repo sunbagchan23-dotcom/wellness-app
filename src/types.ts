@@ -27,6 +27,7 @@ export interface ExerciseSetting {
   minutes: number; // 1회 운동 시간
   days: DayIndex[]; // 운동하는 요일 (perWeek에서 앱이 정함)
   perWeek?: number; // 주 몇 회
+  items?: { type: string; minutes: number }[]; // 운동별 1회 시간 (예: 러닝 30분, 헬스 60분). 있으면 이걸 우선
 }
 
 /** "던져 놓는" 할 일. 앱이 빈 시간에 알아서 배치 */

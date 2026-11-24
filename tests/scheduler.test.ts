@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict';
 import { buildWeek, exerciseDaysFor, sleepIntervals, wakeTime } from '../src/scheduler';
 import { sleepOptions } from '../src/sleep';
-import { emptyGrid, eventsToGrid, gridToEvents, paintRect } from '../src/fixedGrid';
+import { clearRun, emptyGrid, eventsToGrid, gridToEvents, paintRect } from '../src/fixedGrid';
 import { Settings } from '../src/types';
 import { formatTime, formatTimeDigits, parseTime } from '../src/time';
 
@@ -103,5 +103,19 @@ assert.deepEqual(
   again.map((e) => [e.title, e.days.join(), e.start, e.end]),
   evs.map((e) => [e.title, e.days.join(), e.start, e.end]),
 );
+
+// 운동별 시간: 러닝 30분 → 헬스 60분이 연달아
+w = buildWeek(
+  { ...base, exercise: { ...base.exercise, items: [{ type: '러닝', minutes: 30 }, { type: '헬스', minutes: 60 }] } },
+  [],
+  0,
+);
+const exs = w.days[1].filter((b) => b.kind === 'exercise');
+assert.deepEqual(exs.map((b) => `${b.title} ${formatTime(b.start)}-${formatTime(b.end)}`), ['러닝 07:30-08:00', '헬스 08:00-09:00']);
+
+// 격자: 칠한 덩어리 누르면 통째로 삭제
+let g2 = paintRect(emptyGrid(), { day: 0, slot: 6 }, { day: 0, slot: 23 }, 'w');
+g2 = clearRun(g2, 0, 10);
+assert.equal(gridToEvents(g2, brushes).length, 0);
 
 console.log('시간표 규칙 테스트 모두 통과');
