@@ -55,6 +55,7 @@ export interface Block {
   kind: BlockKind;
   start: number;
   end: number;
+  note?: string; // 한 줄 안내 (예: 끼니별 식사 방향)
 }
 
 export interface Conflict {

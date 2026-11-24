@@ -126,6 +126,11 @@ assert.deepEqual(meals(6), ['점심 12:00', '저녁 18:30']);
 // 근무 09~18이면 점심은 근무 위에 12:00으로 겹쳐 넣고, 저녁은 퇴근 뒤
 w = buildWeek({ ...base, fixed: [{ id: 'w', title: '출근', days: [0, 1, 2, 3, 4], start: t('09:00'), end: t('18:00') }] }, [], 0);
 assert.deepEqual(meals(1), ['점심 12:00', '저녁 18:30']);
+// 식사 방향: 아침 운동한 날의 첫 끼(점심)는 단백질 먼저
+assert.ok(w.days[1].find((b) => b.id === 'lunch')!.note!.includes('단백질 먼저'));
+// 운동 안 하는 토요일 점심은 기본 안내
+assert.ok(!w.days[5].find((b) => b.id === 'lunch')!.note!.includes('운동한 날'));
+
 // 할 일은 식사 시간을 피함
 w = buildWeek({ ...base, fixed: [{ id: 'w', title: '출근', days: [0, 1, 2, 3, 4], start: t('09:00'), end: t('18:00') }] }, [{ id: 'z', title: '공부', minutes: 60, day: 0, done: false }], 0);
 const study = w.days[0].find((b) => b.kind === 'task')!;

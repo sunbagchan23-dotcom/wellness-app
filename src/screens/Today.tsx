@@ -99,6 +99,14 @@ export default function Today({
           </Text>
         )}
       </View>
+      {(() => {
+        const meal = current?.kind === 'meal' ? current : next?.kind === 'meal' ? next : undefined;
+        return meal?.note ? (
+          <Text style={st.mealNote}>
+            🍽 {meal.title} · {meal.note}
+          </Text>
+        ) : null;
+      })()}
 
       <WeekTimetable
         week={week}
@@ -162,6 +170,7 @@ const st = StyleSheet.create({
   noticeBtnText: { color: colors.bg, fontWeight: '800', fontSize: 16 },
   sleepLine: { color: colors.sub, marginBottom: 10, marginTop: 2 },
   conflict: { color: colors.sub, marginTop: 6, lineHeight: 20 },
+  mealNote: { color: colors.text, fontSize: 13, marginTop: -4, marginBottom: 10 },
   nowRow: { flexDirection: 'row', alignItems: 'baseline', marginBottom: 10 },
   nowLabel: { color: colors.sub, fontSize: 13, marginRight: 8 },
   nowTitle: { color: colors.text, fontSize: 20, fontWeight: '800', marginRight: 10, flexShrink: 1 },

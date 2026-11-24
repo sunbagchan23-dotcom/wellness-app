@@ -18,6 +18,21 @@ const MEALS = [
   { id: 'dinner', title: '저녁', minutes: 60, from: 18 * 60, ideal: 18 * 60 + 30, to: 21 * 60 },
 ];
 
+/** 끼니별 한 줄 식사 방향 (기록 없이 앱이 방향만 정해 줌) */
+function mealNote(id: string, day: Block[], slot: Interval, settings: Settings): string {
+  const exercisedBefore = day.some((b) => b.kind === 'exercise' && b.end <= slot.start);
+  const firstMealAfterExercise =
+    exercisedBefore && !day.some((b) => b.kind === 'meal' && b.start < slot.start);
+  if (firstMealAfterExercise) return '운동한 날: 단백질 먼저. 손바닥 1~2개 분량(계란·닭·생선·두부)';
+  if (id === 'dinner') {
+    const bed = settings.sleep.bedtime;
+    const gap = (bed - slot.end + 1440) % 1440;
+    if (gap < 180) return '자기 3시간 전이 가까워요. 양은 가볍게, 기름진 건 피하세요';
+    return '단백질 한 덩이 + 채소 한 접시 + 밥은 반 공기';
+  }
+  return '단백질 한 덩이 + 채소 한 접시 + 밥 한 공기';
+}
+
 interface Interval {
   start: number;
   end: number;
@@ -147,7 +162,7 @@ export function buildWeek(settings: Settings, tasks: Task[], today: DayIndex): W
         findSlot(days[d], meal.minutes, Math.max(meal.ideal, from), to) ?? findSlot(days[d], meal.minutes, from, to);
       const overlay = findSlot(busy, meal.minutes, Math.max(meal.ideal, from), to) ?? findSlot(busy, meal.minutes, from, to);
       const slot = free ?? overlay;
-      if (slot) days[d].push({ id: meal.id, title: meal.title, kind: 'meal', ...slot });
+      if (slot) days[d].push({ id: meal.id, title: meal.title, kind: 'meal', ...slot, note: mealNote(meal.id, days[d], slot, settings) });
     }
   }
 
