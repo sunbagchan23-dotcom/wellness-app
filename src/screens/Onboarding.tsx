@@ -11,11 +11,6 @@ import { Button, Card, Chip, ChoiceBox, Input, Row, Sub, TimeInput, Title } from
 const ALL_DAYS: DayIndex[] = [0, 1, 2, 3, 4, 5, 6];
 
 // 운동 인터뷰 질문들
-const EXERCISE_KINDS: { label: string; types: string[]; hint?: string }[] = [
-  { label: '러닝 + 헬스', types: ['러닝', '헬스'], hint: '기본 추천. 아침에 같이 합니다' },
-  { label: '러닝', types: ['러닝'] },
-  { label: '헬스', types: ['헬스'] },
-];
 const EXERCISE_MINUTES = [30, 45, 60, 90];
 const EXERCISE_PER_WEEK = [3, 4, 5, 6];
 
@@ -199,20 +194,20 @@ export default function Onboarding({
 
       {step === 'exKind' && (
         <>
-          <Title>주로 어떤 운동을 하나요?</Title>
-          {EXERCISE_KINDS.map((k) => (
-            <ChoiceBox
-              key={k.label}
-              label={k.label}
-              hint={k.hint}
-              on={exTypes.join('+') === k.types.join('+')}
-              onPress={() => {
-                setExTypes(k.types);
-                go('exMin');
-              }}
-            />
-          ))}
-          <Sub>다른 운동이나 취미 운동은 나중에 대화로 추가할 수 있게 만들 예정이에요.</Sub>
+          <Title>처음엔 러닝 + 헬스부터 시작해 보세요</Title>
+          <Sub>
+            운동을 잘 몰라도 가장 시작하기 쉬운 조합이에요. 장비나 강습 없이 바로 할 수 있고, 유산소(러닝)와 근력(헬스)을 같이 챙길 수 있어요.
+          </Sub>
+          <ChoiceBox
+            label="좋아요, 러닝 + 헬스로 할게요"
+            hint="아침에 같이 넣어 드려요"
+            on
+            onPress={() => {
+              setExTypes(['러닝', '헬스']);
+              go('exMin');
+            }}
+          />
+          <Sub>다른 운동이나 취미 운동은 시간표가 나온 뒤 대화로 바꿀 수 있게 만들 예정이에요.</Sub>
         </>
       )}
 
