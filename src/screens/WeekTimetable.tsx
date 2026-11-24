@@ -59,7 +59,7 @@ export default function WeekTimetable({
           {Array.from({ length: hours + 1 }, (_, i) => (
             <View key={i} pointerEvents="none">
               <View style={[st.hourLine, { top: y(from + i * 60), left: AXIS_W }]} />
-              {i % 2 === 0 && i < hours && (
+              {i < hours && (
                 <Text style={[st.hourLabel, { top: y(from + i * 60) - 6 }]}>{((from / 60 + i) % 24).toString()}</Text>
               )}
             </View>

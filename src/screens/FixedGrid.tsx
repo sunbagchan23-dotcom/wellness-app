@@ -188,9 +188,9 @@ export default function FixedGrid({
           {Array.from({ length: SLOT_COUNT / 2 + 1 }, (_, h) => (
             <View key={h} style={[st.hourLine, { top: HEADER_H + h * 2 * ROW_H, left: AXIS_W }]} />
           ))}
-          {Array.from({ length: SLOT_COUNT / 4 + 1 }, (_, i) => (
-            <Text key={i} style={[st.hourLabel, { top: HEADER_H + i * 4 * ROW_H - 6 }]}>
-              {slotStart(i * 4) / 60}
+          {Array.from({ length: SLOT_COUNT / 2 }, (_, i) => (
+            <Text key={i} style={[st.hourLabel, { top: HEADER_H + i * 2 * ROW_H - 6 }]}>
+              {slotStart(i * 2) / 60}
             </Text>
           ))}
           {/* 요일 구분선 */}
