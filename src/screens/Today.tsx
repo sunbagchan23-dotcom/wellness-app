@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { colors, kindColors, kindLabels } from '../theme';
-import { Block, DAY_LABELS, DayIndex, Task, WeekSchedule } from '../types';
+import { Block, DAY_LABELS, DayIndex, SleepSetting, Task, WeekSchedule } from '../types';
 import { formatTime, minutesNow } from '../time';
 import { Button, Card, Chip, Input, Row, Sub, Title } from '../ui';
 
@@ -10,6 +10,7 @@ const TASK_MINUTES = [15, 30, 60, 90, 120];
 
 export default function Today({
   week,
+  sleep,
   today,
   isDone,
   onToggle,
@@ -18,6 +19,7 @@ export default function Today({
   onEditSettings,
 }: {
   week: WeekSchedule;
+  sleep: SleepSetting;
   today: DayIndex;
   isDone: (day: DayIndex, block: Block) => boolean;
   onToggle: (day: DayIndex, block: Block) => void;
@@ -53,6 +55,10 @@ export default function Today({
           <Chip key={d} label={d === today ? `${DAY_LABELS[d]}·오늘` : DAY_LABELS[d]} on={day === d} onPress={() => setDay(d)} />
         ))}
       </Row>
+
+      <Text style={st.sleepLine}>
+        매일 취침 {formatTime(sleep.bedtime)} · 기상 {formatTime(sleep.bedtime + Math.round(sleep.hours * 60))}
+      </Text>
 
       {week.conflicts.length > 0 && (
         <Pressable onPress={() => setShowConflicts(!showConflicts)}>
@@ -145,6 +151,7 @@ const st = StyleSheet.create({
   wrap: { padding: 20, paddingBottom: 60 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   link: { color: colors.accent },
+  sleepLine: { color: colors.sub, marginBottom: 10, marginTop: 2 },
   conflict: { color: colors.sub, marginTop: 6, lineHeight: 20 },
   nowLabel: { color: colors.sub, fontSize: 13 },
   nowTitle: { color: colors.text, fontSize: 22, fontWeight: '700', marginTop: 2 },

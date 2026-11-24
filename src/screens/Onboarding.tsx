@@ -152,9 +152,18 @@ export default function Onboarding({
                   <Pressable
                     key={o.cycles}
                     onPress={() => setCycles(o.cycles)}
-                    style={[st.cell, cycles === o.cycles && st.cellOn, o.level === 'short' && { opacity: 0.55 }]}
+                    style={[
+                      st.cell,
+                      o.level === 'good' && st.cellGood,
+                      o.level === 'short' && { opacity: 0.55 },
+                      cycles === o.cycles && st.cellOn,
+                    ]}
                   >
-                    <Text style={st.cellEmoji}>{o.level === 'good' ? '🙂' : o.level === 'ok' ? '😐' : '☹️'}</Text>
+                    {o.level === 'good' ? (
+                      <Text style={st.badge}>추천</Text>
+                    ) : (
+                      <Text style={st.cellEmoji}>{o.level === 'ok' ? '😐' : '☹️'}</Text>
+                    )}
                     <Text style={st.cellTime}>{formatTime(o.wake)}</Text>
                     <Text style={st.cellSub}>
                       {o.cycles}사이클 · {o.sleepHours}시간
@@ -162,7 +171,7 @@ export default function Onboarding({
                   </Pressable>
                 ))}
               </View>
-              <Sub>🙂는 성인 권장 수면(7시간 이상)을 채우는 선택이에요.</Sub>
+              <Sub>초록색 칸은 성인 권장 수면(7시간 이상)을 채우는 추천 선택이에요. 고른 시각은 매일 같은 취침·기상 시각으로 시간표에 고정돼요.</Sub>
             </>
           )}
           <Button label="다음: 운동" disabled={!chosen} onPress={() => go('exDo')} />
@@ -314,7 +323,18 @@ const st = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 10,
   },
-  cellOn: { borderColor: colors.accent, backgroundColor: '#20263A' },
+  cellGood: { backgroundColor: '#15291F', borderColor: '#2E6B4C' },
+  cellOn: { borderColor: colors.accent, borderWidth: 2.5 },
+  badge: {
+    color: colors.bg,
+    backgroundColor: colors.done,
+    fontSize: 12,
+    fontWeight: '800',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 999,
+    overflow: 'hidden',
+  },
   cellEmoji: { fontSize: 20 },
   cellTime: { color: colors.text, fontSize: 26, fontWeight: '800', marginTop: 4 },
   cellSub: { color: colors.sub, marginTop: 4 },

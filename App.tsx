@@ -78,6 +78,7 @@ export default function App() {
     screen = (
       <Today
         week={week!}
+        sleep={settings.sleep}
         today={today}
         isDone={isDone}
         onToggle={toggle}
