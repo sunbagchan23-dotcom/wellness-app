@@ -46,7 +46,7 @@ export interface Settings {
   exercise: ExerciseSetting;
 }
 
-export type BlockKind = 'sleep' | 'fixed' | 'exercise' | 'task';
+export type BlockKind = 'sleep' | 'fixed' | 'exercise' | 'meal' | 'task';
 
 /** 시간표 한 칸 */
 export interface Block {

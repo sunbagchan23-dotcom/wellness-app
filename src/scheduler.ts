@@ -13,6 +13,11 @@ const MORNING_BUFFER = 30; // 기상 후 준비 시간(분)
 const MORNING_END = 12 * 60;
 const DAY_END = 24 * 60;
 
+const MEALS = [
+  { id: 'lunch', title: '점심', minutes: 60, from: 11 * 60 + 30, ideal: 12 * 60, to: 14 * 60 },
+  { id: 'dinner', title: '저녁', minutes: 60, from: 18 * 60, ideal: 18 * 60 + 30, to: 21 * 60 },
+];
+
 interface Interval {
   start: number;
   end: number;
@@ -127,6 +132,22 @@ export function buildWeek(settings: Settings, tasks: Task[], today: DayIndex): W
       } else {
         conflicts.push({ day: d, message: `${DAY_LABELS[d]}요일에는 운동 ${total}분을 넣을 자리가 없습니다.` });
       }
+    }
+  }
+
+  // 식사: 점심·저녁을 앱이 매일 넣는다.
+  // 시간대 안의 빈칸을 먼저 찾고, 없으면(예: 근무 중 점심) 기준 시각에 고정 일정 위에 겹쳐 넣는다.
+  for (let d = 0 as DayIndex; d < 7; d = (d + 1) as DayIndex) {
+    for (const meal of MEALS) {
+      const from = Math.max(meal.from, awake.start);
+      const to = Math.min(meal.to, awake.end);
+      if (to - from < meal.minutes) continue; // 깨어 있는 시간 밖이면 생략
+      const busy = days[d].filter((b) => b.kind !== 'fixed'); // 고정 일정과는 겹쳐도 됨
+      const free =
+        findSlot(days[d], meal.minutes, Math.max(meal.ideal, from), to) ?? findSlot(days[d], meal.minutes, from, to);
+      const overlay = findSlot(busy, meal.minutes, Math.max(meal.ideal, from), to) ?? findSlot(busy, meal.minutes, from, to);
+      const slot = free ?? overlay;
+      if (slot) days[d].push({ id: meal.id, title: meal.title, kind: 'meal', ...slot });
     }
   }
 

@@ -42,7 +42,8 @@ export default function Today({
   }, []);
 
   const blocks = week.days[today].filter((b) => b.kind !== 'sleep');
-  const current = blocks.find((b) => b.start <= now && now < b.end);
+  // 겹친 경우(근무 중 점심 등) 더 늦게 시작한 블록이 '지금'
+  const current = blocks.filter((b) => b.start <= now && now < b.end).pop();
   const next = blocks.find((b) => b.start > now);
   const wake = (sleep.bedtime + Math.round(sleep.hours * 60)) % 1440;
 

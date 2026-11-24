@@ -52,7 +52,7 @@ assert.ok(w.conflicts.some((c) => c.message.includes('수면 시간과') && c.da
 // 할 일: 요일 없으면 오늘(수요일=2)부터 가장 빠른 빈칸
 w = buildWeek(base, [{ id: 'x', title: '보고서', minutes: 90, day: null, done: false }], 2);
 const task = w.days[2].find((b) => b.kind === 'task')!;
-assert.equal(formatTime(task.start), '12:00'); // 08:30~09:00은 30분뿐이라 수업(09~12) 뒤로
+assert.equal(formatTime(task.start), '13:00'); // 08:30~09:00은 짧고, 수업(09~12)·점심(12~13) 뒤로
 assert.ok(w.days[0].every((b) => b.kind !== 'task'));
 
 // 할 일이 너무 길면 충돌
@@ -117,5 +117,18 @@ assert.deepEqual(exs.map((b) => `${b.title} ${formatTime(b.start)}-${formatTime(
 let g2 = paintRect(emptyGrid(), { day: 0, slot: 6 }, { day: 0, slot: 23 }, 'w');
 g2 = clearRun(g2, 0, 10);
 assert.equal(gridToEvents(g2, brushes).length, 0);
+
+// 식사: 기준 시각(점심 12:00, 저녁 18:30)에 먼저 넣음
+w = buildWeek(base, [], 0);
+const meals = (d: number) => w.days[d].filter((b) => b.kind === 'meal').map((b) => `${b.title} ${formatTime(b.start)}`);
+assert.deepEqual(meals(0), ['점심 12:00', '저녁 18:30']);
+assert.deepEqual(meals(6), ['점심 12:00', '저녁 18:30']);
+// 근무 09~18이면 점심은 근무 위에 12:00으로 겹쳐 넣고, 저녁은 퇴근 뒤
+w = buildWeek({ ...base, fixed: [{ id: 'w', title: '출근', days: [0, 1, 2, 3, 4], start: t('09:00'), end: t('18:00') }] }, [], 0);
+assert.deepEqual(meals(1), ['점심 12:00', '저녁 18:30']);
+// 할 일은 식사 시간을 피함
+w = buildWeek({ ...base, fixed: [{ id: 'w', title: '출근', days: [0, 1, 2, 3, 4], start: t('09:00'), end: t('18:00') }] }, [{ id: 'z', title: '공부', minutes: 60, day: 0, done: false }], 0);
+const study = w.days[0].find((b) => b.kind === 'task')!;
+assert.equal(formatTime(study.start), '19:30'); // 저녁 18:30~19:30 뒤
 
 console.log('시간표 규칙 테스트 모두 통과');
