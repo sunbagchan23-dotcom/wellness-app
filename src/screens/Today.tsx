@@ -1,10 +1,11 @@
-// 매일 쓰는 화면: 지금/다음 할 일, 요일별 시간표, 완료 체크, 할 일 던지기
+// 매일 쓰는 화면: 위에 한 주 시간표(누르면 완료 체크), 아래에 할 일 던지기
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { colors, kindColors, kindLabels } from '../theme';
 import { Block, DAY_LABELS, DayIndex, SleepSetting, Task, WeekSchedule } from '../types';
 import { formatTime, minutesNow } from '../time';
 import { Button, Card, Chip, Input, Row, Sub, Title } from '../ui';
+import WeekTimetable from './WeekTimetable';
 
 const TASK_MINUTES = [15, 30, 60, 90, 120];
 
@@ -31,7 +32,6 @@ export default function Today({
   showNotice: boolean;
   onDismissNotice: () => void;
 }) {
-  const [day, setDay] = useState<DayIndex>(today);
   const [now, setNow] = useState(minutesNow(new Date()));
   const [showConflicts, setShowConflicts] = useState(false);
 
@@ -41,24 +41,19 @@ export default function Today({
     return () => clearInterval(id);
   }, []);
 
-  const blocks = week.days[day].filter((b) => b.kind !== 'sleep');
-  const current = day === today ? blocks.find((b) => b.start <= now && now < b.end) : undefined;
-  const next = day === today ? blocks.find((b) => b.start > now) : undefined;
+  const blocks = week.days[today].filter((b) => b.kind !== 'sleep');
+  const current = blocks.find((b) => b.start <= now && now < b.end);
+  const next = blocks.find((b) => b.start > now);
+  const wake = (sleep.bedtime + Math.round(sleep.hours * 60)) % 1440;
 
   return (
     <ScrollView contentContainerStyle={st.wrap} keyboardShouldPersistTaps="handled">
       <View style={st.header}>
-        <Title>{day === today ? '오늘' : `${DAY_LABELS[day]}요일`}</Title>
+        <Title>이번 주</Title>
         <Pressable onPress={onEditSettings}>
           <Text style={st.link}>설정 다시 하기</Text>
         </Pressable>
       </View>
-
-      <Row>
-        {([0, 1, 2, 3, 4, 5, 6] as DayIndex[]).map((d) => (
-          <Chip key={d} label={d === today ? `${DAY_LABELS[d]}·오늘` : DAY_LABELS[d]} on={day === d} onPress={() => setDay(d)} />
-        ))}
-      </Row>
 
       {showNotice && (
         <View style={st.notice}>
@@ -73,7 +68,7 @@ export default function Today({
       )}
 
       <Text style={st.sleepLine}>
-        매일 취침 {formatTime(sleep.bedtime)} · 기상 {formatTime(sleep.bedtime + Math.round(sleep.hours * 60))}
+        매일 취침 {formatTime(sleep.bedtime)} · 기상 {formatTime(wake)}
       </Text>
 
       {week.conflicts.length > 0 && (
@@ -92,37 +87,29 @@ export default function Today({
         </Pressable>
       )}
 
-      {day === today && (
-        <Card>
-          <Text style={st.nowLabel}>지금</Text>
-          <Text style={st.nowTitle}>{current ? current.title : '비어 있는 시간'}</Text>
-          {next && (
-            <Text style={st.nextText}>
-              다음 · {formatTime(next.start)} {next.title}
-            </Text>
-          )}
-        </Card>
-      )}
+      <View style={st.nowRow}>
+        <Text style={st.nowLabel}>지금</Text>
+        <Text style={st.nowTitle} numberOfLines={1}>
+          {current ? current.title : '빈 시간'}
+        </Text>
+        {next && (
+          <Text style={st.nextText} numberOfLines={1}>
+            다음 {formatTime(next.start)} {next.title}
+          </Text>
+        )}
+      </View>
 
-      {blocks.length === 0 && <Sub>이 날은 일정이 없어요.</Sub>}
-      {blocks.map((b) => {
-        const done = isDone(day, b);
-        const isNow = b === current;
-        return (
-          <Pressable key={b.id} onPress={() => onToggle(day, b)} onLongPress={() => b.kind === 'task' && onDeleteTask(b.id)}>
-            <View style={[st.block, { borderLeftColor: kindColors[b.kind] }, isNow && st.blockNow]}>
-              <View style={[st.check, done && st.checkOn]}>{done && <Text style={st.checkMark}>✓</Text>}</View>
-              <View style={{ flex: 1 }}>
-                <Text style={[st.blockTitle, done && st.doneText]}>{b.title}</Text>
-                <Text style={st.blockSub}>
-                  {formatTime(b.start)}~{formatTime(b.end)} · {kindLabels[b.kind]}
-                </Text>
-              </View>
-            </View>
-          </Pressable>
-        );
-      })}
-      <Sub>항목을 누르면 완료 체크, 할 일은 길게 누르면 삭제됩니다.</Sub>
+      <WeekTimetable
+        week={week}
+        today={today}
+        now={now}
+        wake={wake}
+        bedtime={sleep.bedtime}
+        isDone={isDone}
+        onToggle={onToggle}
+        onDeleteTask={onDeleteTask}
+      />
+      <Sub>블록을 누르면 완료, 할 일은 길게 누르면 삭제됩니다.</Sub>
 
       <AddTask today={today} onAdd={onAddTask} />
     </ScrollView>
@@ -174,9 +161,10 @@ const st = StyleSheet.create({
   noticeBtnText: { color: colors.bg, fontWeight: '800', fontSize: 16 },
   sleepLine: { color: colors.sub, marginBottom: 10, marginTop: 2 },
   conflict: { color: colors.sub, marginTop: 6, lineHeight: 20 },
-  nowLabel: { color: colors.sub, fontSize: 13 },
-  nowTitle: { color: colors.text, fontSize: 22, fontWeight: '700', marginTop: 2 },
-  nextText: { color: colors.sub, marginTop: 6 },
+  nowRow: { flexDirection: 'row', alignItems: 'baseline', marginBottom: 10 },
+  nowLabel: { color: colors.sub, fontSize: 13, marginRight: 8 },
+  nowTitle: { color: colors.text, fontSize: 20, fontWeight: '800', marginRight: 10, flexShrink: 1 },
+  nextText: { color: colors.sub, fontSize: 13, flexShrink: 1 },
   block: {
     flexDirection: 'row',
     alignItems: 'center',
