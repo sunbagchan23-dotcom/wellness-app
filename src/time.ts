@@ -34,3 +34,9 @@ export function dateKey(date: Date): string {
 export function minutesNow(date: Date): number {
   return date.getHours() * 60 + date.getMinutes();
 }
+
+/** 숫자만 받아 "HH:MM" 모양으로. 예: "2300" → "23:00", "73" → "73" (입력 중) */
+export function formatTimeDigits(text: string): string {
+  const d = text.replace(/\D/g, '').slice(0, 4);
+  return d.length <= 2 ? d : `${d.slice(0, 2)}:${d.slice(2)}`;
+}

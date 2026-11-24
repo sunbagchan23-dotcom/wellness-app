@@ -2,6 +2,7 @@
 import { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, TextInputProps, View } from 'react-native';
 import { colors } from './theme';
+import { formatTimeDigits } from './time';
 
 export function Title({ children }: { children: ReactNode }) {
   return <Text style={s.title}>{children}</Text>;
@@ -100,4 +101,61 @@ const s = StyleSheet.create({
     marginBottom: 8,
   },
   row: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center' },
+});
+
+/** 숫자만 입력하면 ":"가 자동으로 들어가는 시간 입력칸. 예: 2300 → 23:00 */
+export function TimeInput({
+  value,
+  onChange,
+  style,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  style?: TextInputProps['style'];
+}) {
+  return (
+    <Input
+      value={value}
+      onChangeText={(t) => onChange(formatTimeDigits(t))}
+      keyboardType="number-pad"
+      maxLength={5}
+      placeholder="0000"
+      style={style}
+    />
+  );
+}
+
+/** 인터뷰형 큰 선택 상자 */
+export function ChoiceBox({
+  label,
+  hint,
+  on,
+  onPress,
+}: {
+  label: string;
+  hint?: string;
+  on?: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable onPress={onPress} style={({ pressed }) => [sBox.box, on && sBox.boxOn, pressed && { opacity: 0.7 }]}>
+      <Text style={sBox.boxLabel}>{label}</Text>
+      {hint ? <Text style={sBox.boxHint}>{hint}</Text> : null}
+    </Pressable>
+  );
+}
+
+const sBox = StyleSheet.create({
+  box: {
+    backgroundColor: colors.card,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    paddingVertical: 18,
+    paddingHorizontal: 16,
+    marginBottom: 10,
+  },
+  boxOn: { borderColor: colors.accent, backgroundColor: '#20263A' },
+  boxLabel: { color: colors.text, fontSize: 18, fontWeight: '700' },
+  boxHint: { color: colors.sub, fontSize: 13, marginTop: 4 },
 });

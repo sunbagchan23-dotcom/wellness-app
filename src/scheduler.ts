@@ -147,5 +147,16 @@ export function buildWeek(settings: Settings, tasks: Task[], today: DayIndex): W
   return { days, conflicts };
 }
 
-/** 수면 시간 추천: 성인 권장 7~9시간 (미국수면의학회 기준) */
-export const RECOMMENDED_SLEEP_HOURS = [7, 7.5, 8, 8.5, 9];
+/** 주 n회 운동을 요일에 고르게 나눔 (월=0) */
+export function exerciseDaysFor(perWeek: number): DayIndex[] {
+  const patterns: Record<number, DayIndex[]> = {
+    1: [2],
+    2: [1, 4],
+    3: [0, 2, 4],
+    4: [0, 1, 3, 4],
+    5: [0, 1, 2, 3, 4],
+    6: [0, 1, 2, 3, 4, 5],
+    7: [0, 1, 2, 3, 4, 5, 6],
+  };
+  return patterns[Math.min(7, Math.max(1, Math.round(perWeek)))];
+}

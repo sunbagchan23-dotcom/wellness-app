@@ -17,14 +17,16 @@ export interface FixedEvent {
 
 export interface SleepSetting {
   bedtime: number; // 취침 시각(분)
-  hours: number; // 수면 시간
+  hours: number; // 누워 있는 시간(잠드는 시간 포함). 시간표에서 이만큼 막음
+  cycles?: number; // 선택한 수면 사이클 수
 }
 
 export interface ExerciseSetting {
   enabled: boolean;
   types: string[]; // 예: ['러닝', '헬스']
   minutes: number; // 1회 운동 시간
-  days: DayIndex[]; // 운동하는 요일
+  days: DayIndex[]; // 운동하는 요일 (perWeek에서 앱이 정함)
+  perWeek?: number; // 주 몇 회
 }
 
 /** "던져 놓는" 할 일. 앱이 빈 시간에 알아서 배치 */

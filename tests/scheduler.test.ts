@@ -1,9 +1,10 @@
 /// <reference types="node" />
 // 시간표 규칙 테스트. 실행: npm test
 import assert from 'node:assert/strict';
-import { buildWeek, sleepIntervals, wakeTime } from '../src/scheduler';
+import { buildWeek, exerciseDaysFor, sleepIntervals, wakeTime } from '../src/scheduler';
+import { sleepOptions } from '../src/sleep';
 import { Settings } from '../src/types';
-import { formatTime, parseTime } from '../src/time';
+import { formatTime, formatTimeDigits, parseTime } from '../src/time';
 
 const t = (s: string) => parseTime(s)!;
 
@@ -56,5 +57,25 @@ assert.ok(w.days[0].every((b) => b.kind !== 'task'));
 // 할 일이 너무 길면 충돌
 w = buildWeek(base, [{ id: 'y', title: '대청소', minutes: 20 * 60, day: 6, done: false }], 0);
 assert.ok(w.conflicts.some((c) => c.message.includes('대청소')));
+
+// 시간 입력: 숫자만 쳐도 ":" 자동
+assert.equal(formatTimeDigits('2300'), '23:00');
+assert.equal(formatTimeDigits('730'), '73:0');
+assert.equal(formatTimeDigits('0730'), '07:30');
+assert.equal(formatTimeDigits('23'), '23');
+assert.equal(formatTimeDigits('23:0'), '23:0');
+assert.equal(formatTimeDigits('240000'), '24:00');
+
+// 수면 사이클: 23:00 취침 → sleepytime.cc와 같은 결과
+const opts = sleepOptions(t('23:00'));
+assert.deepEqual(opts.map((o) => formatTime(o.wake)), ['03:45', '05:15', '06:45', '08:15']);
+assert.deepEqual(opts.map((o) => o.level), ['short', 'ok', 'good', 'good']);
+assert.equal(opts[2].inBedHours, 7.75);
+// 선택한 사이클로 시간표의 기상 시각이 맞게 나옴
+assert.equal(formatTime(wakeTime(t('23:00'), opts[2].inBedHours)), '06:45');
+
+// 운동 주 n회 → 요일 자동 배분
+assert.deepEqual(exerciseDaysFor(3), [0, 2, 4]);
+assert.equal(exerciseDaysFor(6).length, 6);
 
 console.log('시간표 규칙 테스트 모두 통과');
