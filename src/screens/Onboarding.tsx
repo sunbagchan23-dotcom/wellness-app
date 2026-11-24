@@ -4,11 +4,11 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { buildWeek, exerciseDaysFor } from '../scheduler';
 import { sleepOptions } from '../sleep';
 import { colors } from '../theme';
-import { DAY_LABELS, DayIndex, FixedEvent, Settings } from '../types';
+import { DAY_LABELS, FixedEvent, Settings } from '../types';
 import { formatTime, parseTime } from '../time';
-import { Button, Card, Chip, ChoiceBox, Input, Row, Sub, TimeInput, Title } from '../ui';
+import { Button, Card, ChoiceBox, Sub, TimeInput, Title } from '../ui';
+import FixedGrid from './FixedGrid';
 
-const ALL_DAYS: DayIndex[] = [0, 1, 2, 3, 4, 5, 6];
 
 // 운동 인터뷰 질문들
 const EXERCISE_MINUTES = [30, 45, 60, 90];
@@ -16,10 +16,6 @@ const EXERCISE_PER_WEEK = [3, 4, 5, 6];
 
 type Step = 'fixed' | 'sleep' | 'exDo' | 'exKind' | 'exMin' | 'exFreq' | 'review';
 const STEPS: Step[] = ['fixed', 'sleep', 'exDo', 'exKind', 'exMin', 'exFreq', 'review'];
-
-function toggle<T>(list: T[], v: T): T[] {
-  return list.includes(v) ? list.filter((x) => x !== v) : [...list, v];
-}
 
 export default function Onboarding({
   initial,
@@ -41,12 +37,7 @@ export default function Onboarding({
   const [exMin, setExMin] = useState(initial?.exercise.minutes ?? 60);
   const [exPerWeek, setExPerWeek] = useState(initial?.exercise.perWeek ?? 5);
 
-  // 고정 일정 입력 폼
-  const [title, setTitle] = useState('');
-  const [days, setDays] = useState<DayIndex[]>([]);
-  const [startText, setStartText] = useState('09:00');
-  const [endText, setEndText] = useState('18:00');
-  const [formError, setFormError] = useState('');
+  const [scrollOn, setScrollOn] = useState(true);
 
   const bedtime = parseTime(bedText);
   const options = bedtime === null ? [] : sleepOptions(bedtime);
@@ -74,21 +65,8 @@ export default function Onboarding({
     go(STEPS[Math.max(0, STEPS.indexOf(step) - 1)]);
   };
 
-  function addFixed() {
-    const start = parseTime(startText);
-    const end = parseTime(endText);
-    if (!title.trim()) return setFormError('일정 이름을 적어 주세요.');
-    if (days.length === 0) return setFormError('요일을 하나 이상 골라 주세요.');
-    if (start === null || end === null) return setFormError('시간은 숫자 4자리로 적어 주세요. 예: 0730');
-    if (end <= start) return setFormError('끝나는 시간이 시작보다 늦어야 해요.');
-    setFixed([...fixed, { id: String(Date.now()), title: title.trim(), days, start, end }]);
-    setTitle('');
-    setDays([]);
-    setFormError('');
-  }
-
   return (
-    <ScrollView contentContainerStyle={st.wrap} keyboardShouldPersistTaps="handled">
+    <ScrollView contentContainerStyle={st.wrap} keyboardShouldPersistTaps="handled" scrollEnabled={scrollOn}>
       <View style={st.top}>
         {step !== 'fixed' ? (
           <Pressable onPress={back} hitSlop={12}>
@@ -106,33 +84,9 @@ export default function Onboarding({
 
       {step === 'fixed' && (
         <>
-          <Title>요일별 고정 일정</Title>
-          <Sub>수업, 출근처럼 매주 반복되는 일정을 넣어 주세요. 없으면 건너뛰어도 됩니다.</Sub>
-          {fixed.map((f) => (
-            <Card key={f.id}>
-              <Text style={st.itemTitle}>{f.title}</Text>
-              <Text style={st.itemSub}>
-                {[...f.days].sort((a, b) => a - b).map((d) => DAY_LABELS[d]).join(' ')} · {formatTime(f.start)}~
-                {formatTime(f.end)}
-              </Text>
-              <Button kind="ghost" label="삭제" onPress={() => setFixed(fixed.filter((x) => x.id !== f.id))} />
-            </Card>
-          ))}
-          <Card>
-            <Input placeholder="일정 이름 (예: 출근)" value={title} onChangeText={setTitle} />
-            <Row>
-              {ALL_DAYS.map((d) => (
-                <Chip key={d} label={DAY_LABELS[d]} on={days.includes(d)} onPress={() => setDays(toggle(days, d))} />
-              ))}
-            </Row>
-            <Row>
-              <TimeInput style={st.time} value={startText} onChange={setStartText} />
-              <Text style={st.tilde}>~</Text>
-              <TimeInput style={st.time} value={endText} onChange={setEndText} />
-            </Row>
-            {formError ? <Text style={st.error}>{formError}</Text> : null}
-            <Button kind="ghost" label="+ 일정 추가" onPress={addFixed} />
-          </Card>
+          <Title>매주 반복되는 일정을 칠해 주세요</Title>
+          <Sub>출근, 수업처럼 매주 같은 요일·시간에 있는 일정이에요.</Sub>
+          <FixedGrid initial={fixed} onChange={setFixed} onTouching={(t) => setScrollOn(!t)} />
           <Button label="다음: 수면" onPress={() => go('sleep')} />
         </>
       )}
@@ -267,6 +221,15 @@ function Review({ settings, onDone }: { settings: Settings; onDone: () => void }
   return (
     <View>
       <Title>이렇게 시간표를 만들게요</Title>
+      {settings.fixed.length > 0 && (
+        <Card>
+          {settings.fixed.map((f) => (
+            <Text key={f.id} style={st.itemSub}>
+              {f.title} · {f.days.map((d) => DAY_LABELS[d]).join(' ')} · {formatTime(f.start)}~{formatTime(f.end)}
+            </Text>
+          ))}
+        </Card>
+      )}
       <Card>
         <Text style={st.itemTitle}>
           수면 {formatTime(sleep.bedtime)} → {formatTime(sleep.bedtime + Math.round(sleep.hours * 60))}

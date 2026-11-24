@@ -3,6 +3,7 @@
 import assert from 'node:assert/strict';
 import { buildWeek, exerciseDaysFor, sleepIntervals, wakeTime } from '../src/scheduler';
 import { sleepOptions } from '../src/sleep';
+import { emptyGrid, eventsToGrid, gridToEvents, paintRect } from '../src/fixedGrid';
 import { Settings } from '../src/types';
 import { formatTime, formatTimeDigits, parseTime } from '../src/time';
 
@@ -77,5 +78,30 @@ assert.equal(formatTime(wakeTime(t('23:00'), opts[2].inBedHours)), '06:45');
 // 운동 주 n회 → 요일 자동 배분
 assert.deepEqual(exerciseDaysFor(3), [0, 2, 4]);
 assert.equal(exerciseDaysFor(6).length, 6);
+
+// 격자 칠하기: 월~금 09:00~18:00을 한 번에 드래그 (09:00 = 6번째 칸, 18:00 직전 = 23번째 칸)
+const brushes = [{ id: 'w', title: '출근', color: '#000' }, { id: 'c', title: '수업', color: '#111' }];
+let g = paintRect(emptyGrid(), { day: 0, slot: 6 }, { day: 4, slot: 23 }, 'w');
+let evs = gridToEvents(g, brushes);
+assert.equal(evs.length, 1);
+assert.deepEqual(evs[0].days, [0, 1, 2, 3, 4]);
+assert.equal(formatTime(evs[0].start), '09:00');
+assert.equal(formatTime(evs[0].end), '18:00');
+// 수요일만 일찍 끝나게 지우면 수요일은 따로 묶임
+g = paintRect(g, { day: 2, slot: 20 }, { day: 2, slot: 23 }, null);
+evs = gridToEvents(g, brushes);
+assert.equal(evs.length, 2);
+assert.ok(evs.some((e) => e.days.join() === '2' && formatTime(e.end) === '16:00'));
+// 다른 붓(수업)을 토요일에
+g = paintRect(g, { day: 5, slot: 8 }, { day: 5, slot: 11 }, 'c');
+evs = gridToEvents(g, brushes);
+assert.ok(evs.some((e) => e.title === '수업' && e.days.join() === '5' && formatTime(e.start) === '10:00'));
+// 되돌리기: 일정 → 격자 → 일정이 같은 결과
+const round = eventsToGrid(evs, ['#a', '#b']);
+const again = gridToEvents(round.grid, round.brushes);
+assert.deepEqual(
+  again.map((e) => [e.title, e.days.join(), e.start, e.end]),
+  evs.map((e) => [e.title, e.days.join(), e.start, e.end]),
+);
 
 console.log('시간표 규칙 테스트 모두 통과');
