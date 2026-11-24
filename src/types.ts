@@ -37,6 +37,7 @@ export interface Task {
   minutes: number;
   day: DayIndex | null; // null이면 앱이 가장 빠른 빈 날에 배치
   done: boolean;
+  doneAt?: number; // 완료한 시각(ms)
 }
 
 export interface Settings {

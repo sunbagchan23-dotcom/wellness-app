@@ -17,6 +17,8 @@ export default function Today({
   onAddTask,
   onDeleteTask,
   onEditSettings,
+  showNotice,
+  onDismissNotice,
 }: {
   week: WeekSchedule;
   sleep: SleepSetting;
@@ -26,6 +28,8 @@ export default function Today({
   onAddTask: (t: Omit<Task, 'id' | 'done'>) => void;
   onDeleteTask: (blockId: string) => void;
   onEditSettings: () => void;
+  showNotice: boolean;
+  onDismissNotice: () => void;
 }) {
   const [day, setDay] = useState<DayIndex>(today);
   const [now, setNow] = useState(minutesNow(new Date()));
@@ -55,6 +59,18 @@ export default function Today({
           <Chip key={d} label={d === today ? `${DAY_LABELS[d]}·오늘` : DAY_LABELS[d]} on={day === d} onPress={() => setDay(d)} />
         ))}
       </Row>
+
+      {showNotice && (
+        <View style={st.notice}>
+          <Text style={st.noticeTitle}>이건 이상적인 시간표입니다.</Text>
+          <Text style={st.noticeBody}>
+            그대로 따라오면 당신은 대단한 사람이 됩니다. 당신이 따라오는 만큼, 제가 앞으로의 스케줄을 맞춰 갑니다.
+          </Text>
+          <Pressable onPress={onDismissNotice} style={st.noticeBtn}>
+            <Text style={st.noticeBtnText}>시작하기</Text>
+          </Pressable>
+        </View>
+      )}
 
       <Text style={st.sleepLine}>
         매일 취침 {formatTime(sleep.bedtime)} · 기상 {formatTime(sleep.bedtime + Math.round(sleep.hours * 60))}
@@ -151,6 +167,11 @@ const st = StyleSheet.create({
   wrap: { padding: 20, paddingBottom: 60 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   link: { color: colors.accent },
+  notice: { backgroundColor: '#1C2340', borderRadius: 16, padding: 18, marginBottom: 14, borderWidth: 1, borderColor: colors.accent },
+  noticeTitle: { color: colors.text, fontSize: 18, fontWeight: '800' },
+  noticeBody: { color: colors.text, fontSize: 15, lineHeight: 22, marginTop: 8 },
+  noticeBtn: { marginTop: 14, backgroundColor: colors.accent, borderRadius: 10, paddingVertical: 12, alignItems: 'center' },
+  noticeBtnText: { color: colors.bg, fontWeight: '800', fontSize: 16 },
   sleepLine: { color: colors.sub, marginBottom: 10, marginTop: 2 },
   conflict: { color: colors.sub, marginTop: 6, lineHeight: 20 },
   nowLabel: { color: colors.sub, fontSize: 13 },

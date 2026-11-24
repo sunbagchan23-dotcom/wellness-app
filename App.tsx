@@ -6,7 +6,7 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { buildWeek } from './src/scheduler';
 import Onboarding from './src/screens/Onboarding';
 import Today from './src/screens/Today';
-import { storage } from './src/storage';
+import { DoneLog, storage } from './src/storage';
 import { colors } from './src/theme';
 import { Block, DayIndex, Settings, Task } from './src/types';
 import { dateKey, dayIndexOf } from './src/time';
@@ -23,7 +23,8 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [settings, setSettings] = useState<Settings | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [done, setDone] = useState<Record<string, boolean>>({});
+  const [done, setDone] = useState<DoneLog>({});
+  const [noticeSeen, setNoticeSeen] = useState(true);
   const [editing, setEditing] = useState(false);
   const today = dayIndexOf(new Date());
 
@@ -32,6 +33,7 @@ export default function App() {
       setSettings(await storage.loadSettings());
       setTasks(await storage.loadTasks());
       setDone(await storage.loadDone());
+      setNoticeSeen(await storage.loadNoticeSeen());
       setLoading(false);
     })();
   }, []);
@@ -51,11 +53,17 @@ export default function App() {
   function toggle(day: DayIndex, block: Block) {
     if (block.kind === 'task') {
       // 완료한 할 일은 그 요일에 고정해서, 다른 할 일이 추가돼도 자리가 바뀌지 않게
-      updateTasks(tasks.map((t) => (`task-${t.id}` === block.id ? { ...t, done: !t.done, day } : t)));
+      updateTasks(
+        tasks.map((t) =>
+          `task-${t.id}` === block.id ? { ...t, done: !t.done, doneAt: t.done ? undefined : Date.now(), day } : t,
+        ),
+      );
       return;
     }
     const key = `${dateKey(dateOfWeekday(day))}:${block.id}`;
-    const next = { ...done, [key]: !done[key] };
+    const next = { ...done };
+    if (next[key]) delete next[key];
+    else next[key] = Date.now(); // 완료한 시각을 남김
     setDone(next);
     storage.saveDone(next);
   }
@@ -85,6 +93,11 @@ export default function App() {
         onAddTask={(t) => updateTasks([...tasks, { ...t, id: String(Date.now()), done: false }])}
         onDeleteTask={(blockId) => updateTasks(tasks.filter((t) => `task-${t.id}` !== blockId))}
         onEditSettings={() => setEditing(true)}
+        showNotice={!noticeSeen}
+        onDismissNotice={() => {
+          setNoticeSeen(true);
+          storage.saveNoticeSeen();
+        }}
       />
     );
   }
