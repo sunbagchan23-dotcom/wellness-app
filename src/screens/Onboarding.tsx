@@ -104,8 +104,8 @@ export default function Onboarding({
             <Text style={st.error}>숫자 4자리로 적어 주세요. 예: 2300</Text>
           ) : (
             <>
-              <Text style={st.q}>이때 일어나면 사이클이 끝나는 시점이에요</Text>
-              <Sub>잠드는 데 15분, 한 사이클 90분으로 계산했어요. 사람마다 사이클 길이가 달라서 대략적인 안내입니다.</Sub>
+              <Text style={st.q}>이 시각에 일어나세요</Text>
+              <Sub>잠드는 15분과 90분 수면 사이클로 계산했습니다.</Sub>
               <View style={st.grid}>
                 {options.map((o) => (
                   <Pressable
@@ -130,7 +130,7 @@ export default function Onboarding({
                   </Pressable>
                 ))}
               </View>
-              <Sub>초록색 칸은 성인 권장 수면(7시간 이상)을 채우는 추천 선택이에요. 고른 시각은 매일 같은 취침·기상 시각으로 시간표에 고정돼요.</Sub>
+              <Sub>초록색 칸은 7시간 이상 자는 추천 선택입니다.</Sub>
             </>
           )}
           <Button label="다음: 운동" disabled={!chosen} onPress={() => go('exDo')} />
@@ -141,7 +141,7 @@ export default function Onboarding({
         <>
           <Title>운동을 하고 있나요?</Title>
           <ChoiceBox label="네, 하고 있어요" onPress={() => go('runMin')} />
-          <ChoiceBox label="아직은 안 해요" hint="시간표에 운동을 넣지 않아요. 나중에 바꿀 수 있어요" onPress={() => finish(null)} />
+          <ChoiceBox label="아직은 안 해요" hint="운동 없이 시간표를 짭니다" onPress={() => finish(null)} />
         </>
       )}
 
@@ -167,7 +167,7 @@ export default function Onboarding({
           {GYM_MINUTES.map((m) => (
             <ChoiceBox key={m} label={`${m}분`} onPress={() => finish({ run: runMin, gym: m })} />
           ))}
-          <Sub>러닝 다음에 헬스를 이어서, 기상 30분 뒤부터 오전 빈 시간에 넣어 드려요.</Sub>
+          <Sub>월~금 아침, 러닝이 끝나면 바로 헬스로 이어갑니다.</Sub>
         </>
       )}
     </ScrollView>
