@@ -22,7 +22,12 @@
 - 잠금화면 위젯 / 라이브 액티비티 (Apple 개발자 계정 필요)
 - 지난주 할 일 정리 (지금은 주가 바뀌어도 할 일이 남아 있음)
 
-## 아이폰에 설치하기 (GitHub + AltStore)
+## 아이폰에 설치하기 (TestFlight, 11/26부터)
+- 첫 설정은 `docs/testflight-setup.md` (한 번만)
+- 이후: main에 코드가 올라오면 `.github/workflows/eas.yml`이 EAS Update로 즉시 업데이트를 보냄 → 앱을 껐다 켜면 반영
+- 네이티브 변경(새 라이브러리, 위젯 등)이 있을 때만 Actions → "EAS (TestFlight)" → Run workflow → `build` (무료 플랜 월 15회)
+
+## 예전 방식: GitHub + AltStore (수동 실행만)
 1. 이 폴더를 GitHub 저장소에 올리면 `.github/workflows/build-ios.yml`이 클라우드 Mac에서 앱을 빌드합니다.
 2. GitHub 저장소 → Actions 탭 → 최근 실행 → 아래 Artifacts에서 `WellnessApp-ipa`를 받아 압축을 풉니다.
 3. PC의 AltServer가 켜진 상태에서, 아이폰 AltStore로 `WellnessApp.ipa`를 설치합니다.

@@ -2,10 +2,9 @@
 # 결과물은 Actions 실행 페이지의 Artifacts에서 받아 AltStore로 설치하세요(AltStore가 내 Apple ID로 서명).
 name: Build iOS IPA for AltStore
 
+# TestFlight로 옮긴 뒤로는 자동 실행하지 않음. 필요할 때만 Actions 탭에서 수동 실행
 on:
-  workflow_dispatch: # Actions 탭에서 "Run workflow" 버튼으로 실행
-  push:
-    branches: [main]
+  workflow_dispatch:
 
 jobs:
   build:

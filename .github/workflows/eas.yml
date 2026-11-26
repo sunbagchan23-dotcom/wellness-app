@@ -1,0 +1,52 @@
+# TestFlight 출시·업데이트
+# - main에 코드가 올라오면: 화면·로직(JS) 변경을 EAS Update로 바로 보냄 → 앱을 다시 열면 반영
+# - Actions 탭에서 "Run workflow"로 build를 고르면: 새 앱 빌드 → TestFlight 제출 (네이티브 변경 시, 월 15회 무료 한도)
+# 필요한 GitHub 시크릿: EXPO_TOKEN (없으면 아무것도 하지 않고 넘어감)
+name: EAS (TestFlight)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "update = 즉시 업데이트, build = 새 빌드 + TestFlight 제출"
+        required: true
+        default: update
+        type: choice
+        options: [update, build]
+
+jobs:
+  eas:
+    runs-on: ubuntu-latest
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+    steps:
+      - name: EXPO_TOKEN 확인
+        if: env.EXPO_TOKEN == ''
+        run: echo "EXPO_TOKEN 시크릿이 아직 없어 건너뜁니다."
+
+      - uses: actions/checkout@v4
+        if: env.EXPO_TOKEN != ''
+
+      - uses: actions/setup-node@v4
+        if: env.EXPO_TOKEN != ''
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: 패키지 설치와 테스트
+        if: env.EXPO_TOKEN != ''
+        run: |
+          npm ci
+          npm test
+
+      - name: 즉시 업데이트 (EAS Update)
+        if: env.EXPO_TOKEN != '' && (github.event_name == 'push' || inputs.action == 'update')
+        env:
+          MSG: ${{ github.event.head_commit.message || 'manual update' }}
+        run: npx eas-cli@latest update --channel production --message "$MSG" --non-interactive
+
+      - name: 새 빌드 + TestFlight 제출
+        if: env.EXPO_TOKEN != '' && github.event_name == 'workflow_dispatch' && inputs.action == 'build'
+        run: npx eas-cli@latest build --platform ios --profile production --auto-submit --non-interactive --no-wait

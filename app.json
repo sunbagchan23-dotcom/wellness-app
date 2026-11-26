@@ -11,6 +11,9 @@
       "bundleIdentifier": "com.sunbagchan.wellness",
       "infoPlist": {
         "CFBundleDisplayName": "Wellness"
+      },
+      "config": {
+        "usesNonExemptEncryption": false
       }
     },
     "android": {
@@ -27,6 +30,9 @@
     },
     "locales": {
       "ko": "./locales/ko.json"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
     }
   }
 }
