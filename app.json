@@ -33,6 +33,15 @@
     },
     "runtimeVersion": {
       "policy": "appVersion"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "8f32d766-9636-444c-b0fc-1362b2a60460"
+      }
+    },
+    "owner": "mody_ai",
+    "updates": {
+      "url": "https://u.expo.dev/8f32d766-9636-444c-b0fc-1362b2a60460"
     }
   }
 }
