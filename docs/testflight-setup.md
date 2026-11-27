@@ -14,12 +14,14 @@
 
 ## 2. 검은 창에 한 줄씩 입력
 ```
+set EAS_NO_VCS=1
 npm install
 npx eas-cli@latest login
 npx eas-cli@latest init
 npx eas-cli@latest update:configure
 npx eas-cli@latest build -p ios --profile production
 ```
+- `set EAS_NO_VCS=1`: ZIP으로 받아 git이 없을 때 필요. 이 창에만 적용되니 창을 새로 열면 다시 입력
 - `login`: Expo 계정 이메일·비밀번호
 - `init`: "Would you like to create a project?" → Y
 - `build`: Apple ID 로그인을 물으면 Y → Apple ID, 비밀번호, 폰에 뜬 인증번호 입력.
